@@ -1,0 +1,114 @@
+---
+title: "Boston Housing Data Analysis"
+author: "Shreyanshi Adak"
+date: "2026-01-20"
+output: word_document
+---
+
+```{r}
+library(MASS)
+data(Boston)
+class(Boston)
+dim(Boston)
+?Boston
+```
+
+**1. Report the “class” of the data set. How many rows and columns are in this data set       What do the rows and columns represent**
+
+Answer:
+
+i. The class of the data set is data.frame.
+
+ii. The data set contains 506 rows and 14 columns.
+
+iii. Each row represents a suburb (town) of Boston.
+
+iv. Each column represents a variable describing housing, demographic, or environmental      characteristics of that suburb (e.g. crime rate, tax rate, median house value,          nitrogen oxides concentration etc).
+
+
+
+
+**2. Create a smaller data set with the variables median value of owner-occupied homes,       per capita crime rate, nitrogen oxides concentration, proportion of blacks and           percentage of lower status of the population. Choosing median value of                   owner-occupied homes as the response and the rest as the predictors, make scatter        plots of the response versus each predictor. Present the scatter plots in different      panels of the same graph. Comment on your findings.**
+
+```{r}
+boston_small <- Boston[, c("medv", "crim", "nox", "black", "lstat")]
+head(boston_small)
+
+# Scatter plots
+par(mfrow = c(2, 2))
+plot(boston_small$crim, boston_small$medv,
+xlab = "Crime Rate (crim)", ylab = "Median Home Value (medv)",
+main = "medv vs crim")
+
+
+plot(boston_small$nox, boston_small$medv,
+xlab = "NOx Concentration (nox)", ylab = "Median Home Value (medv)",
+main = "medv vs nox")
+
+
+plot(boston_small$black, boston_small$medv,
+xlab = "Proportion of Blacks (black)", ylab = "Median Home Value (medv)",
+main = "medv vs black")
+
+
+plot(boston_small$lstat, boston_small$medv,
+xlab = "Lower Status Population (lstat)", ylab = "Median Home Value (medv)",
+main = "medv vs lstat")
+```
+Comment:
+
+From the scatter plots, it can be observed that median house value generally decreases as the crime rate increases, indicating a negative relationship. A similar decreasing trend is seen between median house value and nitrogen oxides concentration, though the pattern is not perfectly linear. Median house value tends to be higher for areas with higher values of the black variable, but the relationship is weak and scattered. Among all predictors, the strongest and most clear relationship is observed between median house value and lstat, where higher lower-status population is associated with much lower house values.
+
+
+**3. Which suburbof Boston has lowest median value of owner-occupied homes?
+     What are the values of the other predictors mentioned in (2), for that
+     suburb. How do these values compare to the overall ranges for those pre-
+     dictors? Comment on your findings. Hint: Mention which percentile these
+     values belong to.**
+```{r}
+
+min_medv_index <- which.min(Boston$medv)
+Boston[min_medv_index, c("medv", "crim", "nox", "black", "lstat")]
+
+# percentiles 
+predictors <- c("crim", "nox", "black", "lstat")
+sapply(predictors, function(var) {
+ecdf(Boston[[var]])(Boston[min_medv_index, var])
+})
+```
+**Comment:**
+
+The suburb with the lowest median house value has very high crime and a high percentage of lower-status population, both of which lie in the upper percentiles of their ranges. The nitrogen oxide level is also relatively high, showing poorer environmental conditions. Overall, these unfavourable socio-economic and environmental factors help explain why housing prices are the lowest in this suburb.
+
+
+**4. Does any suburb of Boston stand out for having notably high crime rates,
+     tax rates, or pupil–teacher ratios? Hint: Use a boxplot to detect any
+     outliers. If so, identify the suburbs that show the outlier values.**
+     
+```{r}
+par(mfrow = c(1, 3))
+boxplot(Boston$crim, main = "Crime Rate (crim)")
+boxplot(Boston$tax, main = "Tax Rate (tax)")
+boxplot(Boston$ptratio, main = "Pupil-Teacher Ratio (ptratio)")
+
+# Identifying outliers
+out_crim <- which(Boston$crim %in% boxplot.stats(Boston$crim)$out)
+out_tax <- which(Boston$tax %in% boxplot.stats(Boston$tax)$out)
+out_ptr <- which(Boston$ptratio %in% boxplot.stats(Boston$ptratio)$out)
+
+
+list(Crime_Outliers = out_crim,
+Tax_Outliers = out_tax,
+PTRatio_Outliers = out_ptr)
+```
+
+**Comment:**
+
+i. A few suburbs clearly stand out as outliers for crime rate and pupil–teacher ratio.
+
+ii. These suburbs exhibit unusually high values compared to the majority of Boston          suburbs.
+
+iii. Such extreme values may heavily influence regression models and should be examined      carefully.
+     
+     
+
