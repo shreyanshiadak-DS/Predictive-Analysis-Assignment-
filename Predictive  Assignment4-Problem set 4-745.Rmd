@@ -1,0 +1,111 @@
+---
+title: "Predictive Analytics Assignment - 4"
+author: "Shreyanshi Adak_745"
+date: "2026-02-19"
+output: html_document
+---
+
+# Problem Set 4
+
+```{r}
+library(ISLR)
+library(ggplot2)
+library(stargazer)
+library(car)
+data(Credit)
+
+```
+
+(a) Scatter Plots
+(i) Age versus Limit
+
+```{r}
+ggplot(Credit, aes(x = Age, y = Limit)) +
+  geom_point(color = "blue") +
+  labs(title = "Scatter Plot: Age vs Limit",
+       x = "Age",
+       y = "Credit Limit") +
+  theme_minimal()
+
+```
+The scatter plot shows little to no clear linear relationship between Age and Limit. The points appear widely dispersed.
+
+(ii) Rating versus Limit
+
+```{r}
+ggplot(Credit, aes(x = Rating, y = Limit)) +
+  geom_point(color = "orange") +
+  labs(title = "Scatter Plot: Rating vs Limit",
+       x = "Credit Rating",
+       y = "Credit Limit") +
+  theme_minimal()
+
+```
+The scatter plot shows a strong positive linear relationship between Rating and Limit.
+This depicts high correlation between the two predictors, a sign of multicollinearity.
+
+(b) Regression Analysis:
+
+We shall estimate three regression models:
+
+Balance ~ Age + Limit
+
+Balance ~ Age + Rating + Limit
+
+Balance ~ Rating + Limit
+```{r}
+# Model 1
+model1 = lm(Balance ~ Age + Limit, data = Credit)
+
+# Model 2
+model2 = lm(Balance ~ Age + Rating + Limit, data = Credit)
+
+# Model 3
+model3 = lm(Balance ~ Rating + Limit, data = Credit)
+
+```
+
+```{r}
+stargazer(model1, model2, model3,
+          type = "text",
+          title = "Regression Results",
+          column.labels = c("Balance ~ Age + Limit",
+                            "Balance ~ Age + Rating + Limit",
+                            "Balance ~ Rating + Limit"),
+          dep.var.labels = "Balance",
+          digits = 3)
+
+```
+Comment on Differences:
+
+The differences occur in Model2, where both Rating and Limit are included.Because Rating and Limit are highly correlated.The standard errors of their coefficients increase substantially.One or both predictors may become statistically insignificant.
+Coefficient magnitudes may change noticeably compared to Model3.
+This instability is a sign of multicollinearity.
+
+(c) Variance Inflation Factor (VIF):
+
+VIF Computation for the full model:
+
+```{r}
+vif(model2)
+
+```
+
+Comment on Multicollinearity :-
+
+If VIF > 5=moderate multicollinearity
+
+If VIF > 10=severe multicollinearity
+
+Rating and Limit are expected to have large VIF values due to their strong correlation.
+This confirms the presence of multicollinearity in the model including both variables.
+
+Conclusion:
+
+1. Age and Limit show weak relationship.
+2. Rating and Limit show extremely strong linear relationship.
+3. Including both Rating and Limit together inflates standard errors.
+4. High VIF values confirm multicollinearity.
+
+
+
