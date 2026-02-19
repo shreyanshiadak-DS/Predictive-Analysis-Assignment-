@@ -1,0 +1,55 @@
+---
+title: "Predictive Analytics Assignment - 4"
+author: "Shreyanshi Adak_745"
+date: "2026-02-19"
+output: html_document
+---
+# Problem Set 3
+
+5. Problem to demonstrate the utility of nonlinear regression over linear regression
+
+Get the fgl data set from “MASS” library.
+
+```{r Vehicle window glass}
+library(MASS)
+data("fgl")
+View(fgl)
+```
+
+(a) Considering the refractive index (RI) of “Vehicle Window glass” as the variable of interest and assuming linearity of regression, run multiple linear regression of RI on different metallic oxides. From the p value, report which metallic oxide best explains the refractive index.
+
+```{r linear model}
+fgl_cut = subset(fgl,fgl$type == "Veh")
+model_cut = lm(RI~Na+Mg+Al+Si+K+Ca+Ba+Fe, data = fgl_cut)
+summary(model_cut)
+
+```
+Interpretation:
+Oxide iron(Fe) is the best,for explaining the RI of Vehicle window glass as it has the lowest p-value. 
+
+(b) Run a simple linear regression of RI on the best predictor chosen in (a).
+
+```{r lin model on best predictors}
+model_best_oxides = lm(RI~Fe,data=fgl_cut)
+summary(model_best_oxides)
+```
+Interpretation:
+
+$R^2$ = 0.2097
+
+This explains almost 21% of the variance in RI of VWG.
+
+(c) Can you further improve the regression of the refractive index of “Vehicle
+Window glass” on the predictor chosen by you in part (a)? Give the new fitted
+model and compare its performance with the model in (b).
+
+```{r better model}
+model_better = lm(RI~Fe+I(Fe**2),data = fgl_cut)
+summary(model_better)
+```
+Interpretation:
+
+$R^2$ = 0.3554. 
+
+This explains 35% variance of RI in VWG.
+
