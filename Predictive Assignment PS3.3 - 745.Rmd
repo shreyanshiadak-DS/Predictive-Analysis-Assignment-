@@ -1,0 +1,58 @@
+---
+title: "Predictive Assignment PS - 3"
+author: "Shreyanshi Adak - 745"
+date: "2026-02-26"
+output: word_document
+---
+###  Problem 3 ###
+
+To demonstrate the role of qualitative (ordinal) predictors in addition to quantitative predictors in multiple linear regression, 
+Consider “diamonds” data set in R. It is in the ggplot2 package. Make a list of all the ordinal categorical variables. Identify the response.
+
+(a) Run a linear regression of the response on the quality of cut. Write the fitted regression model.
+
+(b) Test whether the expected price of diamond with premium cut is significantly different from that of the ideal cut.
+
+(c) What is the expected price of a diamond of ideal cut?
+
+(d) Modify the regression model in (a) by incorporating the predictor “table”. Write the fitted regression model.
+
+(e) Test for the significance of “table” in predicting the price of diamond.
+
+(f) Find the average estimated price of a diamond with an average table value and which is of fair cut.
+
+```{r}
+set.seed(1234)
+library(ggplot2)
+library(MASS)
+head(diamonds)
+contrasts(diamonds$cut)=contr.sdif(5)
+ord_mod=lm(price~cut,data=diamonds)
+summary(ord_mod)
+summary(lm(price~cut,data=diamonds))
+summary(lm(price~table,data=diamonds))
+
+aggregate(price~cut,data=diamonds,mean)
+
+head(diamonds$cut)
+lvl=as.numeric(diamonds$cut)
+code_fun=function(x){
+  if(x-5==0){
+    return(c(0,0,0,0))
+  }else if(x-5==-1){
+    return(c(1,0,0,0))
+  }else if(x-5==-2){
+    return(c(1,1,0,0))
+  }else if(x-5==-3){
+    return(c(1,1,1,0))
+  }else{
+    return(c(1,1,1,1))
+  }
+}
+coded_pred=t(sapply(lvl,code_fun))
+colnames(coded_pred)=c("Premium","Very_Good","Good","Fair")
+diamonds=cbind(diamonds,coded_pred)
+ord_mod=lm(price~Premium+Very_Good+Good+Fair,data=diamonds)
+summary(ord_mod)
+```
+
