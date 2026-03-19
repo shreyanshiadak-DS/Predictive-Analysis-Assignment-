@@ -1,0 +1,164 @@
+---
+title: "Predictive Analytics PS- 7"
+author: "Shreyanshi Adak - 745"
+date: "2026-03-19"
+output: html_document
+---
+
+#Problem Set 7: Shrinkage Methods
+
+Load Data and Preprocess
+```{r}
+library(ISLR)
+library(glmnet)
+
+# Load and clean data
+data(Hitters)
+Hitters <- na.omit(Hitters)
+
+# Create model matrix (dummy variables)
+x <- model.matrix(Salary ~ ., Hitters)[, -1]
+y <- Hitters$Salary
+```
+Q1. Split the data set into training (remaining) and test set (100 observations)
+```{r}
+set.seed(123)
+train_index <- sample(1:nrow(x), nrow(x) - 100)
+
+x_train <- x[train_index, ]
+y_train <- y[train_index]
+
+x_test <- x[-train_index, ]
+y_test <- y[-train_index]
+```
+
+Q2. Train least squares model and report train MSE and test MSE
+```{r}
+# Fit least squares
+lm_fit <- lm(Salary ~ ., data = Hitters, subset = train_index)
+
+# Predictions
+train_pred <- predict(lm_fit, newdata = Hitters[train_index, ])
+test_pred  <- predict(lm_fit, newdata = Hitters[-train_index, ])
+
+# MSE
+train_mse <- mean((y_train - train_pred)^2)
+test_mse  <- mean((y_test - test_pred)^2)
+
+train_mse
+test_mse
+```
+Q3. Ridge Regression
+```{r}
+# Grid of lambda
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+ridge_fit <- glmnet(x_train, y_train, alpha = 0, lambda = lambda_grid)
+
+dim(coef(ridge_fit))
+```
+(ii) L2 norm for 50th and 60th lambda
+```{r}
+coef_50 <- coef(ridge_fit)[,50]
+coef_60 <- coef(ridge_fit)[,60]
+
+l2_50 <- sqrt(sum(coef_50[-1]^2))  # exclude intercept
+l2_60 <- sqrt(sum(coef_60[-1]^2))
+
+l2_50
+l2_60
+```
+Comment: L2 norm decreases as λ increases → coefficients shrink.
+
+(iv) Test MSE for λ₅₀ and λ₆₀
+```{r}
+pred_50 <- predict(ridge_fit, s = lambda_grid[50], newx = x_test)
+pred_60 <- predict(ridge_fit, s = lambda_grid[60], newx = x_test)
+
+mse_50 <- mean((y_test - pred_50)^2)
+mse_60 <- mean((y_test - pred_60)^2)
+
+mse_50
+mse_60
+```
+Q4. Plot standardized coefficients vs λ
+```{r}
+plot(ridge_fit, xvar = "lambda", label = TRUE)
+```
+
+Interpretation:
+As λ increases, coefficients shrink toward zero but never become exactly zero.
+
+Q5. Plot vs ratio of L2 norms
+```{r}
+plot(ridge_fit, xvar = "norm", label = TRUE)
+```
+
+Interpretation:
+Graph becomes smoother; x-axis now shows shrinkage relative to least squares instead of λ.
+
+Q6. Ridge with Cross-Validation
+```{r}
+set.seed(123)
+cv_ridge <- cv.glmnet(x_train, y_train, alpha = 0)
+
+best_lambda <- cv_ridge$lambda.min
+
+# Test MSE
+ridge_pred <- predict(cv_ridge, s = best_lambda, newx = x_test)
+ridge_mse <- mean((y_test - ridge_pred)^2)
+
+best_lambda
+ridge_mse
+```
+Q7. LASSO with Cross-Validation
+```{r}
+set.seed(123)
+cv_lasso <- cv.glmnet(x_train, y_train, alpha = 1)
+
+lasso_pred <- predict(cv_lasso, s = "lambda.min", newx = x_test)
+lasso_mse <- mean((y_test - lasso_pred)^2)
+
+# Number of non-zero coefficients
+lasso_coef <- coef(cv_lasso, s = "lambda.min")
+nonzero <- sum(lasso_coef != 0) - 1  # exclude intercept
+
+lasso_mse
+nonzero
+```
+Q8. Elastic Net with Cross-Validation
+```{r}
+set.seed(123)
+cv_enet <- cv.glmnet(x_train, y_train, alpha = 0.5)
+
+enet_pred <- predict(cv_enet, s = "lambda.min", newx = x_test)
+enet_mse <- mean((y_test - enet_pred)^2)
+
+# Non-zero predictors
+enet_coef <- coef(cv_enet, s = "lambda.min")
+enet_nonzero <- rownames(enet_coef)[enet_coef[,1] != 0]
+
+enet_mse
+enet_nonzero
+```
+
+Q9. Comparison of Models
+```{r}
+train_mse
+test_mse
+ridge_mse
+lasso_mse
+enet_mse
+```
+Comment:
+
+Least Squares: High variance → higher test error
+
+Ridge: Reduces variance → improves prediction
+
+LASSO: Performs variable selection → sparse model
+
+Elastic Net: Balance of Ridge & LASSO
+
+Conclusion:
+Shrinkage methods (especially LASSO/Elastic Net) generally give better prediction accuracy for Salary.
