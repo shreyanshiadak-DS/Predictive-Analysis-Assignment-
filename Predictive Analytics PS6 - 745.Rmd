@@ -1,0 +1,156 @@
+---
+title: "Predictive Analytics PS- 6"
+author: "Shreyanshi Adak - 745"
+date: "2026-03-18"
+output: html_document
+---
+
+Consider the “Hitters” data. For loading the data you need to install ISLR library. We wish to predict a baseball player’s salary on the basis of various predictors. So first we need to choose an optimal model. 
+
+
+```{r}
+rm(list=ls())
+install.packages("ISLR")
+library(ISLR)
+head(Hitters)
+dim(Hitters)
+?Hitters
+```
+
+
+1. Clean the data by removing all rows that have missing value in any vari able. You will be working with this clean data. 
+
+```{r}
+
+df=na.omit(Hitters)
+dim(df)
+```
+
+2. Split the data randomly into train-test keeping 80% as training sample and remaining as test sample. 
+
+```{r}
+set.seed(123)
+train.id=sample(1:263,210)
+train.data=df[train.id,] #Training data
+head(train.data)
+test.data=df[-train.id,] #Test data
+head(test.data)
+dim(train.data);dim(test.data)
+```
+
+
+3. Perform the best subset selection on the training sample. While choosing the best model fit up to a 19 variable model. Choose the best model according to adjusted R squared, BIC , AIC and Cp values. In case the best model differs according to the selection criteria, report the best fitted model according to each selection criterion. 
+
+```{r}
+install.packages("leaps")
+library(leaps)
+best.subset=regsubsets(Salary~.,data=train.data,nvmax=19)
+summary(best.subset)
+#Adjusted R squared*/*
+adjr2=summary(best.subset)$adjr2
+adjr2
+cp=summary(best.subset)$cp
+cp
+bic=summary(best.subset)$bic
+bic
+coef(best.subset, which.min(bic)) #Best BIC Model
+coef(best.subset, which.min(cp)) #Best cp Model
+coef(best.subset, which.max(adjr2)) #Best Adjusted R squared Model
+```
+
+4. Find the training MSE and test MSE for each of the best models selected according to different criterion as mentioned in 3 and compare their values. 
+
+```{r}
+m.cp=lm(Salary~AtBat+Hits+Walks+CAtBat+CRuns+CRBI+CWalks+Division+PutOuts+Assists+NewLeague,data=train.data)
+m.bic=lm(Salary~Walks+CAtBat+CHits+CHmRun+Division,data=train.data)
+m.adjr=lm(Salary~AtBat+Hits+Walks+CAtBat+CRuns+CRBI+CWalks+Division+PutOuts+Assists+Errors+NewLeague,data=train.data)
+mse.train.cp=1/210*(sum((train.data$Salary-predict(m.cp))^2)) #Training MSE for cp
+mse.train.bic=1/210*(sum((train.data$Salary-predict(m.bic))^2)) #Training MSE for bic
+mse.train.adjr=1/210*(sum((train.data$Salary-predict(m.adjr))^2)) #Training MSE for adjR2
+mse.train.bic
+mse.train.adjr
+mse.train.cp
+y.hat.test.cp=predict(m.cp, newdata=test.data)
+y.hat.test.bic=predict(m.bic, newdata=test.data)
+y.hat.test.adjr=predict(m.adjr, newdata=test.data)
+mse.test.cp=mean((test.data$Salary-y.hat.test.cp)^2)
+mse.test.cp
+mse.test.bic=mean((test.data$Salary-y.hat.test.bic)^2)
+mse.test.bic
+mse.test.adjr=mean((test.data$Salary-y.hat.test.adjr)^2)
+mse.test.adjr
+out.best=data.frame(Measure=c("Cp","BIC","AdjR2"),Training_MSE=c(mse.train.cp,mse.train.bic,mse.train.adjr),
+                    Test_MSE=c(mse.test.cp,mse.test.bic,mse.test.adjr))
+out.best
+```
+
+5. Repeat 3-4 using backward stepwise selection method. 
+
+```{r}
+backward.subset=regsubsets(Salary~.,data=train.data,nvmax=19,method="backward")
+summary(backward.subset)
+coef(backward.subset, which.min(summary(backward.subset)$bic)) #Best BIC Model
+coef(backward.subset, which.min(summary(backward.subset)$cp)) #Best cp Model
+coef(backward.subset, which.max(summary(backward.subset)$adjr2)) #Best Adjusted R squared Model
+
+m.cp2=lm(Salary~AtBat+Hits+Walks+CAtBat+CHits+CHmRun+CRuns+CWalks+Division+PutOuts+Assists+Errors+NewLeague,data=train.data)
+m.bic2=lm(Salary~Walks+CAtBat+CHits+CHmRun+Division,data=train.data)
+m.adjr2=lm(Salary~AtBat+Hits+Walks+CAtBat+CHits+CHmRun+CRuns+CWalks+Division+PutOuts+Assists+Errors+NewLeague,data=train.data)
+
+mse.train.cp2=1/210*(sum((train.data$Salary-predict(m.cp2))^2)) #Training MSE for cp
+mse.train.bic2=1/210*(sum((train.data$Salary-predict(m.bic2))^2)) #Training MSE for bic
+mse.train.adjr2=1/210*(sum((train.data$Salary-predict(m.adjr2))^2)) #Training MSE for adjR2
+
+y.hat.test.cp2=predict(m.cp2, newdata=test.data)
+y.hat.test.bic2=predict(m.bic2, newdata=test.data)
+y.hat.test.adjr2=predict(m.adjr2, newdata=test.data)
+mse.test.cp2=mean((test.data$Salary-y.hat.test.cp2)^2)
+mse.test.bic2=mean((test.data$Salary-y.hat.test.bic2)^2)
+mse.test.adjr2=mean((test.data$Salary-y.hat.test.adjr2)^2)
+
+out.backward=data.frame(Measure=c("Cp","BIC","AdjR2"),Training_MSE=c(mse.train.cp2,mse.train.bic2,mse.train.adjr2),
+                    Test_MSE=c(mse.test.cp2,mse.test.bic2,mse.test.adjr2))
+out.backward
+```
+
+
+6. Repeat 3-4 using forward stepwise selection method. 
+
+```{r}
+forward.subset=regsubsets(Salary~.,data=train.data,nvmax=19,method="forward")
+summary(forward.subset)
+coef(forward.subset, which.min(summary(forward.subset)$bic)) #Best BIC Model
+coef(forward.subset, which.min(summary(forward.subset)$cp)) #Best cp Model
+coef(forward.subset, which.max(summary(forward.subset)$adjr2)) #Best Adjusted R squared Model
+
+m.cp3=lm(Salary~Walks+CAtBat+CHits+CRuns+CRBI+CWalks+Division+PutOuts+Assists+Errors+NewLeague,data=train.data)
+m.bic3=lm(Salary~Walks+CAtBat+CHits+CRuns++CRBI+CWalks+Division,data=train.data)
+m.adjr3=lm(Salary~AtBat+Hits+Walks+Years+CAtBat++CHits+CRuns+CRBI+CWalks+Division+PutOuts+Assists+Errors+NewLeague,data=train.data)
+
+mse.train.cp3=1/210*(sum((train.data$Salary-predict(m.cp3))^2)) #Training MSE for cp
+mse.train.bic3=1/210*(sum((train.data$Salary-predict(m.bic3))^2)) #Training MSE for bic
+mse.train.adjr3=1/210*(sum((train.data$Salary-predict(m.adjr3))^2)) #Training MSE for adjR2
+
+y.hat.test.cp3=predict(m.cp3, newdata=test.data)
+y.hat.test.bic3=predict(m.bic3, newdata=test.data)
+y.hat.test.adjr3=predict(m.adjr3, newdata=test.data)
+mse.test.cp3=mean((test.data$Salary-y.hat.test.cp3)^2)
+mse.test.bic3=mean((test.data$Salary-y.hat.test.bic3)^2)
+mse.test.adjr3=mean((test.data$Salary-y.hat.test.adjr3)^2)
+
+out.forward=data.frame(Measure=c("Cp","BIC","AdjR2"),Training_MSE=c(mse.train.cp3,mse.train.bic3,mse.train.adjr3),
+                        Test_MSE=c(mse.test.cp3,mse.test.bic3,mse.test.adjr3))
+out.forward
+
+final=list(Best_Subset=out.best,Forward_Subset=out.forward,Backward_Subset=out.backward)
+final
+
+```
+
+
+
+
+
+
+
+
